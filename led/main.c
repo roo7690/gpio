@@ -92,9 +92,9 @@ void getOpts(led_opt *opts, int argc, char *argv[]){
       {"pin", required_argument, 0, 'p'},
       {"delay", required_argument, 0, 'd'},
       {0,0,0,0}
-    };                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+    };
 
-    while ((opt = getopt_long(argc,argv,"pd:",_opts,&opt_index)) != -1){
+    while ((opt = getopt_long(argc,argv,"p:d:",_opts,&opt_index)) != -1){
       switch (opt){
         case 'p':
           opts->start.pin = atoi(optarg);
@@ -168,18 +168,20 @@ void stop_led(int pin,int stop){
     }
     return;
   }
-  char line[15];
+  char *line=malloc(15);
   int trouve=0;
   pid_t pid;
   char *cache_tmp=get_path(CACHE_TMP);
   FILE *_tmp=fopen(cache_tmp,"a");
   while(fgets(line,15,_led)!=NULL){
+    char *_line=malloc(strlen(line));
+    strcpy(_line,line);
     char *_pin=strtok(line,"=>");
     if(atoi(_pin)==pin){
       trouve=1;
       pid=atoi(strtok(NULL,"=>"));
     }else{
-      fprintf(_tmp,"%s",line);
+      fprintf(_tmp,"%s",_line);
     }
   }
   fclose(_led);
