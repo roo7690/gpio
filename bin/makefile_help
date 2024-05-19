@@ -1,9 +1,0 @@
-#!/bin/bash
-
-grep -E '(^[a-zA-Z_-]+.*:.*?##.*$$)' /home/roo7690/workspaces/Makefile |
-while read line; do
-  cmd=${line%%:*}
-  cmd=$(echo "$cmd" | sed 's/%/<value>/g')
-  com=$(echo "$line" | awk -F'##' '{print $2}' | sed 's/^[ \t]*//')
-  printf "\033[0;32m${cmd} ----» \033[0m$com\n"
-done

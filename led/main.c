@@ -17,7 +17,13 @@ int main(int argc, char *argv[]){
   }
 
   led_opt opts;
-  getOpts(&opts, argc, argv);
+  if(PICO){
+    opts.start.pin=DEFAULT_PIN_PICO;
+    opts.start.delay_open=DEFAULT_DELAY_PICO_OPEN;
+    opts.start.delay_close=DEFAULT_DELAY_PICO_CLOSE;
+  }else{
+    getOpts(&opts, argc, argv);
+  }
 
   if(!opts.stop){
     stop_led(opts.start.pin,0);

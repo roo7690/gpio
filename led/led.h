@@ -1,3 +1,10 @@
+#ifndef PICO
+  #define PICO 0
+#endif
+
+#define DEFAULT_PIN_PICO 25
+#define DEFAULT_DELAY_PICO_OPEN 1000
+#define DEFAULT_DELAY_PICO_CLOSE 1000
 #define DEFAULT_PIN 0
 #define DEFAULT_DELAY 1000
 #define CACHE_DIR "/.cache"
