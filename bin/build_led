@@ -1,2 +1,0 @@
-#!/bin/bash
-gcc -o $wf/bin/led $wf/led/*.c -lwiringPi

@@ -1,11 +1,6 @@
-#ifndef PICO
-  #define PICO 0
-#endif
+#include "../abstract/abstract.h"
 
-#define DEFAULT_PIN_PICO 25
-#define DEFAULT_DELAY_PICO_OPEN 1000
-#define DEFAULT_DELAY_PICO_CLOSE 1000
-#define DEFAULT_PIN 0
+#define DEFAULT_PIN 11
 #define DEFAULT_DELAY 1000
 #define CACHE_DIR "/.cache"
 #define CACHE "/.cache/led.pid"
@@ -13,7 +8,8 @@
 
 typedef struct led_opt{
   struct start{
-    int pin;
+    A_gpio pin;
+    int _pin;
     int delay_open;
     int delay_close;
   } start;
@@ -22,6 +18,7 @@ typedef struct led_opt{
 
 void getOpts(led_opt *opts, int argc, char *argv[]);
 void help(int error);
-void handler_led(int signum);
-void stop_led(int pin,int stop);
 char *get_path(char *_path);
+
+void stop_led(int pin,int stop);
+void handler_led(int signum);

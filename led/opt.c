@@ -5,13 +5,16 @@
 #include "getopt.h"
 #include "regex.h"
 
+//Option de la commande led
 void getOpts(led_opt *opts, int argc, char *argv[]){
   char *cmd=argv[1];
   if(cmd==NULL){
     help(1);
     exit(1);
   }
-  opts->start.pin = DEFAULT_PIN;
+  opts->start.pin = a_gpio(DEFAULT_PIN);
+  //conserve le pin choisi
+  opts->start._pin=DEFAULT_PIN;
 
   if(strcmp(cmd,"start")==0){
     opts->start.delay_open = DEFAULT_DELAY;
@@ -29,19 +32,21 @@ void getOpts(led_opt *opts, int argc, char *argv[]){
     while ((opt = getopt_long(argc,argv,"p:d:",_opts,&opt_index)) != -1){
       switch (opt){
         case 'p':
-          opts->start.pin = atoi(optarg);
+          opts->start.pin = a_gpio(atoi(optarg));
+          //conserve le pin choisi
+          opts->start._pin=atoi(optarg);
           break;
         case 'd':
           regex_t regex;
-          int ret=regcomp(&regex,"[0-9]+-[0-9]+",REG_EXTENDED);
+          int ret=regcomp(&regex,"^[0-9]+\\+[0-9]+$",REG_EXTENDED);
           ret=regexec(&regex,optarg,0,NULL,0);
           regfree(&regex);
           if(ret){
             help(1);
             exit(1);
           }
-          char *del_op=strtok(optarg,"-");
-          char *del_cl=strtok(NULL,"-");
+          char *del_op=strtok(optarg,"+");
+          char *del_cl=strtok(NULL,"+");
           opts->start.delay_open = atoi(del_op);
           opts->start.delay_close = atoi(del_cl);
           break;
@@ -82,5 +87,5 @@ void help(int error){
   if(error){
     printf("\033[1;31mInvalid command\033[0m\n");
   }
-  printf("Usage: led [start] [-p|--pin] <pin> [-d|--delay] <delay_open-delay_close> en ms\n   or: led [stop] [-p|--pin] <pin>\n");
+  printf("Usage: led [start] [-p|--pin] <pin> [-d|--delay] <delay_open+delay_close> en ms\n   or: led [stop] [-p|--pin] <pin>\n");
 }

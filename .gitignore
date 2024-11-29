@@ -2,5 +2,4 @@
 .vscode
 **/build
 .cache
-pico_setup.sh
 pico

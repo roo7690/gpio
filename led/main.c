@@ -6,64 +6,69 @@
 #include "unistd.h"
 #include "sys/types.h"
 #include "sys/stat.h"
-#include "wiringPi.h"
 
 volatile int led_running=1;
 
 int main(int argc, char *argv[]){
-  if(wiringPiSetup()==-1){
-    printf("\033[1;31mErreur: wiringPiSetup a échoué\033[0m\n");
+  if(initGpio()==-1){
+    printf("\033[1;31mErreur: initiation du sdk échoué\033[0m\n");
     return 1;
   }
-
+  //recuperation des options
   led_opt opts;
-  if(PICO){
-    opts.start.pin=DEFAULT_PIN_PICO;
-    opts.start.delay_open=DEFAULT_DELAY_PICO_OPEN;
-    opts.start.delay_close=DEFAULT_DELAY_PICO_CLOSE;
-  }else{
-    getOpts(&opts, argc, argv);
-  }
+  getOpts(&opts, argc, argv);
 
   if(!opts.stop){
-    stop_led(opts.start.pin,0);
-    pinMode(opts.start.pin,OUTPUT);
+    //reboot
+    stop_led(opts.start._pin,0);
+    //passage du gpio en mode output
+    set_mode_gpio(opts.start.pin,OUTPUT);
+    //add ecoute de signal
     signal(SIGUSR1,handler_led);
+    //copie le process en cours dans un autre thread
+    //et les differencie sous pid
     pid_t pid=fork();
     if(pid==0){
+      //lancement de led
       while(led_running){
-        digitalWrite(opts.start.pin,HIGH);
-        delay(opts.start.delay_open);
-        digitalWrite(opts.start.pin,LOW);
-        delay(opts.start.delay_close);
+        set_state_gpio(opts.start.pin,HIGH);
+        wait_ms(opts.start.delay_open);
+        set_state_gpio(opts.start.pin,LOW);
+        wait_ms(opts.start.delay_close);
       }
     }else if(pid>0){
+      //enregistre le thread sur lequel la led est lancee.
+      //et informe son lancement puis fin de commande
       char *cacheD=get_path(CACHE_DIR);
       mkdir(cacheD,S_IRWXU);
       char *cache=get_path(CACHE);
       FILE *_led=fopen(cache,"a");
-      fprintf(_led,"%d=>%d\n",opts.start.pin,pid);
+      fprintf(_led,"%d=>%d\n",opts.start._pin,pid);
       fclose(_led);
       const char *info="\033[1;32mLED allumé\033[0m\nPin: %d\nDelai d'allumage: %d\nDelai d'arrêt: %d\n";
-      printf(info, opts.start.pin,opts.start.delay_open,opts.start.delay_close);
+      printf(info, opts.start._pin,opts.start.delay_open,opts.start.delay_close);
     }else{
       printf("\033[1;31mErreur: fork a échoué\033[0m\n");
       exit(1);
     }
   }else{
-    stop_led(opts.start.pin,1);
+    stop_led(opts.start._pin,1);
   }
 
   return 0;
 }
 
+//gestionnaire de signal
 void handler_led(int signum){
   if(signum==SIGUSR1){
+    //stop l'execution de la led
     led_running=0;
   }
 }
 
+//stop la led (ne signal rien , s'il s'agit d'un reboot)
 void stop_led(int pin,int stop){
+  //recuperer le fichier de cache
   char *cache=get_path(CACHE);
   FILE *_led=fopen(cache,"r");
   if(_led==NULL){
@@ -72,6 +77,7 @@ void stop_led(int pin,int stop){
     }
     return;
   }
+  //recuperer le thread sur lequel la led s'execute
   char *line=malloc(15);
   int trouve=0;
   pid_t pid;
@@ -98,18 +104,21 @@ void stop_led(int pin,int stop){
     }
     return;
   }
+  //envoyer le signal personnalise `SIGUSR1` au thread
   if(kill(pid,SIGUSR1)==-1){
     perror("kill");
     exit(1);
   }
-  pinMode(pin,INPUT);
+  //remettre le gpio utilise a l'etat input
+  set_mode_gpio(pin,INPUT);
   if(stop){
     printf("\033[1;32mLED éteint\033[0m\n");
   }
 }
 
+//recuperation du chemin d'un fichier
 char *get_path(char *_path){
-  char *wf=getenv("wf");
+  char *wf=getenv("wfm");
   char *path=malloc(strlen(wf)+strlen(_path)+1);
   strcpy(path,wf);
   strcat(path,_path);
