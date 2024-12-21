@@ -4,8 +4,55 @@
 #include "string.h"
 #include "getopt.h"
 #include "regex.h"
+#include "signal.h"
 
-//Option de la commande led
+int running=1;
+
+int main(int argc, char *argv[]){
+  //recuperation des options
+  led_opt opts;
+  getOpts(&opts, argc, argv);
+  if(wiringPiSetup()!=0){
+    perror("Wiringpi setup echec");
+    exit(1);
+  }
+
+  if(!opts.stop){
+    task_stop(1,"led",opts.start._pin);
+    task_run("led",opts.start._pin,led,&opts);
+  }else{
+    task_stop(0,"led",opts.start._pin);
+  }
+}
+
+//task led
+void led(void *_opts){
+  led_opt *opts=(led_opt *)_opts;
+  
+  //listen signal
+  if(signal(SIGTERM,handler_signal)==SIG_ERR){
+    perror("erreur lors de la config d'un SIGTERM");
+    exit(1);
+  }
+  
+  //passage du gpio en mode output
+  pinMode(opts->start.pin,OUTPUT);
+  while(running){
+    digitalWrite(opts->start.pin,HIGH);
+    delay(opts->start.delay_open);
+    digitalWrite(opts->start.pin,LOW);
+    delay(opts->start.delay_close);
+  }
+  pinMode(opts->start.pin,INPUT);
+  exit(0);
+}
+
+//handler de gestionnaire de signal
+void handler_signal(int signal){
+  running=0;
+}
+
+//Option de la task led
 void getOpts(led_opt *opts, int argc, char *argv[]){
   char *cmd=argv[1];
   if(cmd==NULL){
@@ -67,7 +114,7 @@ void getOpts(led_opt *opts, int argc, char *argv[]){
     while((opt = getopt_long(argc,argv,"p:",_opts,&opt_index)) != -1){
       switch (opt){
         case 'p':
-          opts->start.pin = atoi(optarg);
+          opts->start._pin = atoi(optarg);
           break;
         default:
           help(1);
@@ -83,6 +130,7 @@ void getOpts(led_opt *opts, int argc, char *argv[]){
   }
 }
 
+//help pour la task led
 void help(int error){
   if(error){
     printf("\033[1;31mInvalid command\033[0m\n");

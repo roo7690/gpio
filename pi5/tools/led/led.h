@@ -1,10 +1,10 @@
-#include "../abstract/abstract.h"
+#include "../../abstract/abstract.h"
+#include "../tasks/tasks.h"
 
 #define DEFAULT_PIN 11
 #define DEFAULT_DELAY 1000
-#define CACHE_DIR "/.cache"
-#define CACHE "/.cache/led.pid"
-#define CACHE_TMP "/.cache/led.tmp"
+
+void led(void *_opts);
 
 typedef struct led_opt{
   struct start{
@@ -16,9 +16,6 @@ typedef struct led_opt{
   int stop;
 } led_opt;
 
+void handler_signal(int signal);
 void getOpts(led_opt *opts, int argc, char *argv[]);
 void help(int error);
-char *get_path(char *_path);
-
-void stop_led(int pin,int stop);
-void handler_led(int signum);
